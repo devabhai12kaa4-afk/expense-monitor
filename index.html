@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f4c81"><link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon.svg">
+<title>Expense Monitor</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6fa;color:#16202a;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.app{max-width:720px;margin:auto;min-height:100vh;background:#f3f6fa;padding-bottom:82px}
+header{background:linear-gradient(135deg,#0f4c81,#1769aa);color:#fff;padding:20px 18px 24px;border-radius:0 0 24px 24px}
+header h1{margin:0;font-size:23px}header p{margin:4px 0 0;opacity:.85;font-size:13px}
+main{padding:14px}.screen{display:none}.screen.active{display:block}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:-7px}.card{background:#fff;border-radius:15px;padding:14px;box-shadow:0 3px 14px #0000000d}.label{font-size:11px;color:#6b7280}.val{font-size:20px;font-weight:800;margin-top:4px}.green{color:#138a4b}.red{color:#d32f2f}
+.section{background:#fff;border-radius:15px;padding:15px;margin-top:12px;box-shadow:0 3px 14px #0000000d}.section h2{font-size:16px;margin:0 0 12px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.muted{color:#6b7280;font-size:12px}
+.bar{height:9px;background:#e8edf3;border-radius:20px;overflow:hidden;margin-top:7px}.bar i{display:block;height:100%;background:#1769aa;border-radius:20px}
+form{display:grid;gap:11px}label{font-size:12px;font-weight:700;color:#5f6873}input,select{display:block;width:100%;margin-top:5px;border:1px solid #d7dde5;border-radius:10px;padding:12px;background:#fff;font-size:15px}
+button{border:0;border-radius:10px;padding:11px 14px;font-weight:700}.primary{background:#1769aa;color:white}.danger{background:#fee2e2;color:#b91c1c}.soft{background:#edf3f8;color:#174a72}
+.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e7ec;height:72px;display:flex;justify-content:center;z-index:10}.nav{max-width:720px;width:100%;display:grid;grid-template-columns:repeat(4,1fr)}.nav button{background:none;color:#69727c;border-radius:0;font-size:11px}.nav button b{display:block;font-size:20px;margin-bottom:2px}.nav button.active{color:#1769aa}
+.exp{padding:11px 0;border-bottom:1px solid #edf0f3}.exp:last-child{border-bottom:0}.pill{font-size:10px;background:#eef4f8;border-radius:20px;padding:3px 7px;color:#496276}
+table{width:100%;border-collapse:collapse;font-size:12px}td,th{text-align:left;padding:8px 4px;border-bottom:1px solid #eee}th{color:#66717c}
+.empty{text-align:center;color:#89919a;padding:20px}.fab{position:fixed;right:20px;bottom:84px;width:56px;height:56px;border-radius:50%;font-size:27px;background:#1769aa;color:#fff;box-shadow:0 6px 18px #1769aa55}
+@media(min-width:721px){.bottom{left:calc(50% - 360px);right:calc(50% - 360px);border-radius:16px 16px 0 0}}
+</style></head><body>
+<div class="app">
+<header><h1>💰 Expense Monitor</h1><p id="monthTitle"></p></header>
+<main>
+<section id="home" class="screen active">
+<div class="cards">
+<div class="card"><div class="label">INCOME</div><div class="val" id="income">₹0</div></div>
+<div class="card"><div class="label">EXPENSES</div><div class="val red" id="expenses">₹0</div></div>
+<div class="card"><div class="label">SAVINGS</div><div class="val green" id="savings">₹0</div></div>
+<div class="card"><div class="label">SAVINGS RATE</div><div class="val" id="rate">0%</div></div>
+</div>
+<div class="section"><div class="row"><h2>Spending by Category</h2><span class="muted" id="count"></span></div><div id="categories"></div></div>
+<div class="section"><h2>Need vs Want</h2><div id="needwant"></div></div>
+<div class="section"><h2>Budget Alerts</h2><div id="alerts"></div></div>
+</section>
+
+<section id="add" class="screen"><div class="section"><h2>Add Expense</h2>
+<form id="form">
+<label>Date<input id="date" type="date" required></label>
+<label>Description<input id="desc" placeholder="e.g. Grocery shopping" required></label>
+<label>Category<select id="cat"></select></label>
+<label>Payment Method<select id="pay"></select></label>
+<label>Amount (₹)<input id="amt" type="number" min="0" step="1" required></label>
+<label>Need / Want<select id="nw"><option>Need</option><option>Want</option></select></label>
+<label>Notes<input id="note" placeholder="Optional"></label>
+<button class="primary" type="submit">Save Expense</button></form></div>
+<div class="section"><h2>Monthly Income</h2><label>Income (₹)<input id="incomeInput" type="number" min="0" step="100"></label></div>
+</section>
+
+<section id="history" class="screen"><div class="section"><div class="row"><h2>Expense History</h2><button class="soft" onclick="exportCSV()">Export</button></div><div id="historyList"></div></div></section>
+
+<section id="budget" class="screen"><div class="section"><h2>Monthly Budgets</h2><p class="muted">Set limits for each category.</p><div id="budgetList"></div></div>
+<div class="section"><h2>Backup</h2><div class="row"><button class="soft" onclick="backup()">Export Backup</button><button class="soft" onclick="restore()">Restore Backup</button></div><input id="restoreFile" type="file" accept=".json" style="display:none"></div>
+</section>
+</main>
+<button class="fab" onclick="nav('add')">+</button>
+<nav class="bottom"><div class="nav">
+<button class="active" onclick="nav('home')"><b>⌂</b>Home</button>
+<button onclick="nav('add')"><b>＋</b>Add</button>
+<button onclick="nav('history')"><b>☷</b>History</button>
+<button onclick="nav('budget')"><b>◫</b>Budget</button>
+</div></nav>
+</div>
+<script>
+const C=["Food & Groceries","Household","Transport","Utilities","Rent/EMI","Shopping","Health","Child","Entertainment","Eating Out","Subscriptions","Education","Insurance","Investment","Personal","Other"];
+const P=["UPI","Credit Card","Debit Card","Cash","Net Banking","Auto Debit","Other"];
+let data=JSON.parse(localStorage.getItem("em_data")||"[]"), budgets=JSON.parse(localStorage.getItem("em_budget")||"{}"), income=Number(localStorage.getItem("em_income")||0);
+const $=id=>document.getElementById(id), money=n=>"₹"+Number(n||0).toLocaleString("en-IN",{maximumFractionDigits:0});
+function save(){localStorage.setItem("em_data",JSON.stringify(data));localStorage.setItem("em_budget",JSON.stringify(budgets));localStorage.setItem("em_income",income)}
+function current(){let m=new Date().toISOString().slice(0,7);return data.filter(x=>x.date.slice(0,7)===m)}
+function nav(id){document.querySelectorAll(".screen").forEach(x=>x.classList.toggle("active",x.id===id));document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));let i={home:0,add:1,history:2,budget:3}[id];document.querySelectorAll(".nav button")[i].classList.add("active");render()}
+function render(){
+ let es=current(), total=es.reduce((s,x)=>s+x.amount,0), sav=income-total;
+ $("monthTitle").textContent=new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+ $("income").textContent=money(income);$("expenses").textContent=money(total);$("savings").textContent=money(sav);$("rate").textContent=(income?(sav/income*100):0).toFixed(1)+"%";$("count").textContent=es.length+" entries";$("incomeInput").value=income||"";
+ let cs=C.map(c=>[c,es.filter(x=>x.cat===c).reduce((s,x)=>s+x.amount,0)]).filter(x=>x[1]).sort((a,b)=>b[1]-a[1]);
+ $("categories").innerHTML=cs.length?cs.map(x=>`<div style="margin:11px 0"><div class="row"><b>${x[0]}</b><span>${money(x[1])}</span></div><div class="bar"><i style="width:${total?x[1]/total*100:0}%"></i></div><span class="muted">${total?(x[1]/total*100).toFixed(1):0}%</span></div>`).join(""):"<div class='empty'>No expenses this month.</div>";
+ let need=es.filter(x=>x.nw==="Need").reduce((s,x)=>s+x.amount,0),want=total-need;
+ $("needwant").innerHTML=`<div class="row"><b>Need</b><b>${money(need)}</b></div><div class="bar"><i style="width:${total?need/total*100:0}%"></i></div><div class="row" style="margin-top:12px"><b>Want</b><b>${money(want)}</b></div><div class="bar"><i style="width:${total?want/total*100:0}%"></i></div>`;
+ let alerts=C.map(c=>{let a=es.filter(x=>x.cat===c).reduce((s,x)=>s+x.amount,0),b=budgets[c]||0;return b&&a>b?`<div class="exp"><div class="row"><b>${c}</b><span class="red">${money(a-b)} over</span></div><span class="muted">Budget ${money(b)} · Spent ${money(a)}</span></div>`:""}).join("");
+ $("alerts").innerHTML=alerts||"<div class='empty'>No budget overruns 🎉</div>";
+ $("historyList").innerHTML=data.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(x=>`<div class="exp"><div class="row"><b>${x.desc}</b><b>${money(x.amount)}</b></div><div class="muted">${x.date} · ${x.cat} · ${x.pay} · <span class="pill">${x.nw}</span> <button class="danger" style="float:right;padding:4px 8px" onclick="del('${x.id}')">Delete</button></div></div>`).join("")||"<div class='empty'>No expenses yet.</div>";
+ $("budgetList").innerHTML=C.map(c=>{let a=es.filter(x=>x.cat===c).reduce((s,x)=>s+x.amount,0),b=budgets[c]||0,p=b?a/b*100:0;return `<div style="margin:12px 0"><div class="row"><b>${c}</b><span>${money(a)}</span></div><input type="number" placeholder="Budget ₹" value="${b||""}" onchange="setBudget('${c}',this.value)"><div class="bar"><i style="width:${Math.min(p,100)}%;background:${p>100?'#d32f2f':'#1769aa'}"></i></div></div>`}).join("");
+}
+$("cat").innerHTML=C.map(x=>`<option>${x}</option>`).join("");$("pay").innerHTML=P.map(x=>`<option>${x}</option>`).join("");
+$("date").value=new Date().toISOString().slice(0,10);
+$("form").onsubmit=e=>{e.preventDefault();data.push({id:Date.now().toString(),date:$("date").value,desc:$("desc").value,cat:$("cat").value,pay:$("pay").value,amount:Number($("amt").value),nw:$("nw").value,note:$("note").value});save();e.target.reset();$("date").value=new Date().toISOString().slice(0,10);nav("home")};
+$("incomeInput").onchange=e=>{income=Number(e.target.value||0);save();render()};
+function setBudget(c,v){budgets[c]=Number(v||0);save();render()} function del(id){data=data.filter(x=>x.id!==id);save();render()}
+function exportCSV(){let r=[["Date","Description","Category","Payment","Amount","Need/Want","Notes"],...data.map(x=>[x.date,x.desc,x.cat,x.pay,x.amount,x.nw,x.note])];let csv=r.map(a=>a.map(v=>`"${String(v??"").replaceAll('"','""')}"`).join(",")).join("\n");download(csv,"expense-history.csv","text/csv")}
+function backup(){download(JSON.stringify({data,budgets,income},null,2),"expense-monitor-backup.json","application/json")}
+function restore(){$("restoreFile").click()}$("restoreFile").onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{try{let o=JSON.parse(r.result);data=o.data||[];budgets=o.budgets||{};income=Number(o.income||0);save();render();alert("Backup restored")}catch{alert("Invalid backup")}};r.readAsText(f)}
+function download(s,n,t){let a=document.createElement("a");a.href=URL.createObjectURL(new Blob([s],{type:t}));a.download=n;a.click()}
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+render();
+</script></body></html>
